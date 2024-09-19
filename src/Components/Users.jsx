@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Container, Row, Col } from "react-bootstrap";
+import { Container, Row, Col, Form, Modal } from "react-bootstrap";
 import Table from "react-bootstrap/Table";
 import axios from "axios";
 import Button from "react-bootstrap/Button";
@@ -7,15 +7,27 @@ import Button from "react-bootstrap/Button";
 import UserData from "./UserData";
 
 const Users = () => {
-  const [show, setShow] = useState(false);
+  const [showUserModal, setShowUserModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
 
-  const handleShow = (id) => {
-    setShow(true);
+  const [users, setUsers] = useState([]);
+  const [searchUser, setSearchUser] = useState("");
+
+  const handleShowUserModal = (id) => {
+    setShowUserModal(true);
     setSelectedId(id);
   };
 
-  const [users, setUsers] = useState([]);
+  const handleShowDeleteModal = (id) => {
+    setShowDeleteModal(true);
+    setSelectedId(id);
+  };
+
+  const handleCloseDeleteModal = () => {
+    setShowDeleteModal(false);
+    setSelectedId(null);
+  };
 
   const getUsersList = async () => {
     try {
@@ -28,6 +40,24 @@ const Users = () => {
     }
   };
 
+  const handleDelete = async (id) => {
+    try {
+      const response = await axios.delete(`http://localhost:4000/users/${id}`);
+      if (response.status === 200) {
+        const deletedUser = users.filter((eachItem) => eachItem.id !== id);
+        setUsers(deletedUser); //setUsers((prevusers)=>prevusers.filter((eachUser)=>eachUser.id !== id))
+        handleCloseDeleteModal();
+      }
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
+  const filteredUsers = users.filter(
+    (eachItem) =>
+      eachItem.name.toLowerCase().includes(searchUser.toLowerCase()) ||
+      eachItem.address.suite.toLowerCase().includes(searchUser.toLowerCase())
+  );
   useEffect(() => {
     getUsersList();
   }, []);
@@ -35,6 +65,22 @@ const Users = () => {
     <>
       <Container>
         <h3>Users</h3>
+        <Row>
+          <Col>
+            <Button variant="success" size="sm" className="mb-2">
+              <i className="pi pi-plus"></i> Add New User
+            </Button>
+          </Col>
+          <Col sm={3} className="text-right mb-2 float-end">
+            <Form.Control
+              type="text"
+              id="search"
+              name="search"
+              value={searchUser}
+              onChange={(e) => setSearchUser(e.target.value)}
+            />
+          </Col>
+        </Row>
         <Row>
           <Col>
             <Table striped bordered hover size="sm">
@@ -47,7 +93,7 @@ const Users = () => {
                 </tr>
               </thead>
               <tbody>
-                {users.map((eachItem) => {
+                {filteredUsers.map((eachItem) => {
                   return (
                     <tr key={eachItem.id}>
                       <td>{eachItem.name}</td>
@@ -58,14 +104,18 @@ const Users = () => {
                         <Button
                           variant="success"
                           size="sm"
-                          onClick={() => handleShow(eachItem.id)}
+                          onClick={() => handleShowUserModal(eachItem.id)}
                         >
                           <i className="pi pi-eye"></i>
                         </Button>{" "}
                         <Button variant="warning" size="sm">
                           <i className="pi pi-file-edit"></i>
                         </Button>{" "}
-                        <Button variant="danger" size="sm">
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          onClick={() => handleShowDeleteModal(eachItem.id)}
+                        >
                           <i className="pi pi-trash"></i>
                         </Button>
                       </td>
@@ -81,9 +131,24 @@ const Users = () => {
       <UserData
         users={users}
         selectedId={selectedId}
-        show={show}
-        setShow={setShow}
+        show={showUserModal}
+        setShow={setShowUserModal}
       />
+
+      <Modal show={showDeleteModal} onHide={handleCloseDeleteModal}>
+        <Modal.Header closeButton>
+          <Modal.Title>Delete User?</Modal.Title>
+        </Modal.Header>
+
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleCloseDeleteModal}>
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={() => handleDelete(selectedId)}>
+            Delete
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </>
   );
 };
