@@ -3,14 +3,13 @@ import { Container, Row, Col } from "react-bootstrap";
 import Table from "react-bootstrap/Table";
 import axios from "axios";
 import Button from "react-bootstrap/Button";
-import Modal from "react-bootstrap/Modal";
+
 import UserData from "./UserData";
 
 const Users = () => {
   const [show, setShow] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
 
-  const handleClose = () => setShow(false);
   const handleShow = (id) => {
     setShow(true);
     setSelectedId(id);
@@ -79,19 +78,12 @@ const Users = () => {
         </Row>
       </Container>
 
-      <Modal show={show} onHide={handleClose} size="lg">
-        <Modal.Header closeButton>
-          <Modal.Title>User Details</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <UserData users={users} selectedId={selectedId} />
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleClose}>
-            Close
-          </Button>
-        </Modal.Footer>
-      </Modal>
+      <UserData
+        users={users}
+        selectedId={selectedId}
+        show={show}
+        setShow={setShow}
+      />
     </>
   );
 };
