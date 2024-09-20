@@ -3,8 +3,10 @@ import { Container, Row, Col, Form, Modal } from "react-bootstrap";
 import Table from "react-bootstrap/Table";
 import axios from "axios";
 import Button from "react-bootstrap/Button";
-
+import AddUserForm from "./AddUserForm";
 import UserData from "./UserData";
+import { ToastContainer, toast, Slide } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const initialData = {
   name: "",
@@ -18,6 +20,18 @@ const initialData = {
   lng: "",
   phone: "",
   website: "",
+};
+
+const toastStyle = {
+  position: "top-right",
+  autoClose: 5000,
+  hideProgressBar: false,
+  closeOnClick: true,
+  pauseOnHover: true,
+  draggable: true,
+  progress: undefined,
+  theme: "dark",
+  transition: Slide,
 };
 
 const Users = () => {
@@ -41,8 +55,15 @@ const Users = () => {
     setShowUserModal(true);
     setSelectedId(id);
   };
-  const handleAddCloseModal = () => setShowAddModal(false);
-  const handleAddShowModal = () => setShowAddModal(true);
+  const handleAddCloseModal = () => {
+    setInputData(initialData);
+    setShowAddModal(false);
+    setIsEdit(false);
+  };
+
+  const handleAddShowModal = () => {
+    setShowAddModal(true);
+  };
 
   const handleDeleteCloseModal = () => setShowDeleteModal(false);
   const handleDeleteShowModal = (id) => {
@@ -52,6 +73,7 @@ const Users = () => {
 
   const handleReset = () => {
     setInputData(initialData);
+    toast.success("Feilds Reset Done", toastStyle);
   };
 
   const handleAddUser = async (e) => {
@@ -74,30 +96,35 @@ const Users = () => {
       website: inputData.website,
     };
 
-    try {
-      if (isEdit) {
-        const response = await axios.put(
-          `http://localhost:4000/users/${selectedId}`,
-          userData
-        );
-        if (response) {
-          setInputData(initialData);
-          getUsersList();
+    if (inputData.name.length < 1 || inputData.username.length < 1) {
+      toast.error("Please Fill All Feilds", toastStyle);
+    } else {
+      try {
+        if (isEdit) {
+          const response = await axios.put(
+            `http://localhost:4000/users/${selectedId}`,
+            userData
+          );
+          if (response) {
+            toast.success("Users Updated Succesfully", toastStyle);
+            setInputData(initialData);
+            getUsersList();
+          }
+        } else {
+          const response = await axios.post("http://localhost:4000/users", {
+            ...userData,
+            id: Number(Date.now()), // Adding ID only on creation
+          });
+          if (response) {
+            toast.success("Users Updated Succesfully", toastStyle);
+          }
         }
-      } else {
-        const response = await axios.post("http://localhost:4000/users", {
-          ...userData,
-          id: Number(Date.now()), // Adding ID only on creation
-        });
-        if (response) {
-          setInputData(initialData);
-          getUsersList();
-        }
+      } catch (e) {
+        toast.error(e.message, toastStyle);
+      } finally {
+        handleAddCloseModal();
+        getUsersList();
       }
-    } catch (e) {
-      console.log(e);
-    } finally {
-      handleAddCloseModal();
     }
   };
 
@@ -133,21 +160,23 @@ const Users = () => {
         setUsers(response.data);
       }
     } catch (e) {
-      console.log(e);
+      toast.error(e.message, toastStyle);
     }
   };
 
   const handleDelete = async (id) => {
     try {
       const response = await axios.delete(`http://localhost:4000/users/${id}`);
+
       if (response) {
         setUsers((prevUsers) =>
           prevUsers.filter((eachItem) => eachItem.id !== id)
         );
         setShowDeleteModal(false);
+        toast.success("User Deleted Succesfully", toastStyle);
       }
     } catch (e) {
-      console.log(e);
+      toast.error(e.message, toastStyle);
     }
   };
 
@@ -190,9 +219,24 @@ const Users = () => {
               <thead>
                 <tr>
                   <th className="bg-primary text-white">Name</th>
-                  <th className="bg-primary text-white">User Name</th>
-                  <th className="bg-primary text-white">Email</th>
-                  <th className="bg-primary text-white">Actions</th>
+                  <th
+                    className="bg-primary text-white"
+                    style={{ width: "20%" }}
+                  >
+                    User Name
+                  </th>
+                  <th
+                    className="bg-primary text-white"
+                    style={{ width: "20%" }}
+                  >
+                    Email
+                  </th>
+                  <th
+                    className="bg-primary text-white"
+                    style={{ width: "124px" }}
+                  >
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -260,177 +304,17 @@ const Users = () => {
         </Modal.Footer>
       </Modal>
 
-      <Modal show={showAddModal} onHide={handleAddCloseModal} size="lg">
-        <Modal.Header closeButton>
-          <Modal.Title>Add New Users</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
-            <Row>
-              <Col sm={4}>
-                <Form.Group className="mb-3" controlId="name">
-                  <Form.Label>Name</Form.Label>
-                  <Form.Control
-                    type="text"
-                    placeholder="Enter Name"
-                    name="name"
-                    value={inputData.name}
-                    onChange={(e) => handleInput(e)}
-                  />
-                  {inputData.name}
-                </Form.Group>
-              </Col>
-              <Col sm={4}>
-                <Form.Group className="mb-3" controlId="username">
-                  <Form.Label>User Name</Form.Label>
-                  <Form.Control
-                    type="text"
-                    placeholder="Enter User Name"
-                    name="username"
-                    value={inputData.username}
-                    onChange={(e) => handleInput(e)}
-                  />
-                  {inputData.username}
-                </Form.Group>
-              </Col>
-              <Col sm={4}>
-                <Form.Group className="mb-3" controlId="email">
-                  <Form.Label>Email ID</Form.Label>
-                  <Form.Control
-                    type="email"
-                    placeholder="Enter Email ID"
-                    name="email"
-                    value={inputData.email}
-                    onChange={(e) => handleInput(e)}
-                  />
-                  {inputData.email}
-                </Form.Group>
-              </Col>
-              <hr />
-              <Col sm={4}>
-                <Form.Group className="mb-3" controlId="street">
-                  <Form.Label>Street</Form.Label>
-                  <Form.Control
-                    type="text"
-                    placeholder="Enter Street"
-                    name="street"
-                    value={inputData.street}
-                    onChange={(e) => handleInput(e)}
-                  />
-                  {inputData.street}
-                </Form.Group>
-              </Col>
-              <Col sm={4}>
-                <Form.Group className="mb-3" controlId="suite">
-                  <Form.Label>Suite</Form.Label>
-                  <Form.Control
-                    type="text"
-                    placeholder="Enter Suite"
-                    name="suite"
-                    value={inputData.suite}
-                    onChange={(e) => handleInput(e)}
-                  />
-                  {inputData.suite}
-                </Form.Group>
-              </Col>
-              <Col sm={4}>
-                <Form.Group className="mb-3" controlId="city">
-                  <Form.Label>City</Form.Label>
-                  <Form.Control
-                    type="text"
-                    placeholder="Enter City"
-                    name="city"
-                    value={inputData.city}
-                    onChange={(e) => handleInput(e)}
-                  />
-                  {inputData.city}
-                </Form.Group>
-              </Col>
-              <Col sm={4}>
-                <Form.Group className="mb-3" controlId="zipCode">
-                  <Form.Label>Zipcode</Form.Label>
-                  <Form.Select
-                    aria-label="zipcode"
-                    name="zipcode"
-                    value={inputData.zipcode}
-                    onChange={(e) => handleInput(e)}
-                  >
-                    <option>Select ZipCode</option>
-                    <option value="500001">500001</option>
-                    <option value="500002">500002</option>
-                    <option value="500003">500003</option>
-                  </Form.Select>
-                  {inputData.zipcode}
-                </Form.Group>
-              </Col>
-              <Col sm={4}>
-                <Form.Group className="mb-3" controlId="latitude">
-                  <Form.Label>Latitude</Form.Label>
-                  <Form.Control
-                    type="text"
-                    placeholder="Enter Latitude"
-                    name="lat"
-                    value={inputData.lat}
-                    onChange={(e) => handleInput(e)}
-                  />
-                  {inputData.lat}
-                </Form.Group>
-              </Col>
-              <Col sm={4}>
-                <Form.Group className="mb-3" controlId="langitude">
-                  <Form.Label>Langitude</Form.Label>
-                  <Form.Control
-                    type="text"
-                    placeholder="Enter Langitude"
-                    name="lng"
-                    value={inputData.lng}
-                    onChange={(e) => handleInput(e)}
-                  />
-                  {inputData.lng}
-                </Form.Group>
-              </Col>
-              <hr />
-              <Col sm={4}>
-                <Form.Group className="mb-3" controlId="phone">
-                  <Form.Label>Phone</Form.Label>
-                  <Form.Control
-                    type="text"
-                    placeholder="Enter Phone Number"
-                    name="phone"
-                    value={inputData.phone}
-                    onChange={(e) => handleInput(e)}
-                  />
-                  {inputData.phone}
-                </Form.Group>
-              </Col>
-              <Col sm={4}>
-                <Form.Group className="mb-3" controlId="website">
-                  <Form.Label>Website</Form.Label>
-                  <Form.Control
-                    type="text"
-                    placeholder="Enter Website"
-                    name="website"
-                    value={inputData.website}
-                    onChange={(e) => handleInput(e)}
-                  />
-                  {inputData.website}
-                </Form.Group>
-              </Col>
-            </Row>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleReset}>
-            Reset
-          </Button>
-          <Button variant="danger" onClick={handleAddCloseModal}>
-            Close
-          </Button>
-          <Button variant="success" onClick={(e) => handleAddUser(e)}>
-            Add New User
-          </Button>
-        </Modal.Footer>
-      </Modal>
+      <AddUserForm
+        showAddModal={showAddModal}
+        handleAddCloseModal={handleAddCloseModal}
+        inputData={inputData}
+        handleInput={handleInput}
+        handleAddUser={handleAddUser}
+        handleReset={handleReset}
+        isEdit={isEdit}
+      />
+
+      <ToastContainer />
     </>
   );
 };
