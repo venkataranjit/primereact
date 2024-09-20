@@ -50,6 +50,15 @@ const UserData = (props) => {
                 <p>{selectedUser.address.zipcode}</p>
               </Col>
               <Col sm={4}>
+                <label>Latitude</label>
+                <p>{selectedUser.address.geo.lat}</p>
+              </Col>
+              <Col sm={4}>
+                <label>Langitude</label>
+                <p>{selectedUser.address.geo.lng}</p>
+              </Col>
+              <hr />
+              <Col sm={4}>
                 <label>Phone</label>
                 <p>{selectedUser.phone}</p>
               </Col>
